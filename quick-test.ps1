@@ -47,4 +47,4 @@ if ($allRunning) {
 }
 
 Write-Host ""
-Read-Host "Press Enter to exit" 
+Read-Host "Press Enter to exit"

@@ -51,6 +51,25 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
       });
     }
 
+    // Log file details for debugging
+    console.log(`Uploaded file: ${req.file.originalname}, type: ${req.file.mimetype}, size: ${req.file.size} bytes`);
+
+    // Validate file size
+    if (req.file.size === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Uploaded audio file is empty'
+      });
+    }
+
+    // Validate file type
+    if (!req.file.mimetype.startsWith('audio/')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid file type. Only audio files are allowed'
+      });
+    }
+
     console.log(`Transcribing audio file: ${req.file.originalname}`);
 
     // Create form data for Whisper service
@@ -73,14 +92,21 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
       }
     );
 
+    console.log('Whisper response received:', whisperResponse.data);
     res.json(whisperResponse.data);
 
   } catch (error) {
     console.error('Error in transcribe endpoint:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // Enhanced error response with more details
     res.status(500).json({
       success: false,
       error: 'Transcription failed',
-      message: error.message
+      message: error.message,
+      stack: error.stack,
+      axiosResponse: error.response?.data,
+      axiosStatus: error.response?.status
     });
   }
 });
@@ -134,12 +160,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Healthcare Voice AI Backend running on port ${PORT}`);
-  console.log(`📋 Health check: http://localhost:${PORT}/health`);
-  console.log(`🎤 Transcribe: http://localhost:${PORT}/api/transcribe`);
-  console.log(`🔍 Service Status: http://localhost:${PORT}/api/services/status`);
-});
-
-module.exports = app; 
+  console.log(`Healthcare Voice AI Backend running on port ${PORT}`);
+  console.log(`Whisper service URL: ${WHISPER_SERVICE_URL}`);
+}); 
