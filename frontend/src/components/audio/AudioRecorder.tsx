@@ -23,11 +23,21 @@ export default function AudioRecorder({ onAudioReady, isLoading = false }: Audio
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 44100
+          sampleRate: 16000, // Use 16kHz for better Whisper compatibility
+          channelCount: 1 // Mono audio
         }
       })
       
-      mediaRecorderRef.current = new MediaRecorder(stream)
+      // Use WebM format which is more widely supported
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm' 
+        : MediaRecorder.isTypeSupported('audio/mp4') 
+        ? 'audio/mp4'
+        : 'audio/wav'
+      
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType })
       chunksRef.current = []
       
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -37,7 +47,7 @@ export default function AudioRecorder({ onAudioReady, isLoading = false }: Audio
       }
       
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' })
+        const audioBlob = new Blob(chunksRef.current, { type: mimeType })
         const url = URL.createObjectURL(audioBlob)
         setAudioUrl(url)
         onAudioReady(audioBlob)
