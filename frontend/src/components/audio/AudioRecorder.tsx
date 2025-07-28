@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Mic, Square, Upload, Play, Pause } from 'lucide-react'
 
 interface AudioRecorderProps {
@@ -12,12 +12,40 @@ export default function AudioRecorder({ onAudioReady, isLoading = false }: Audio
   const [isRecording, setIsRecording] = useState(false)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [mediaSupported, setMediaSupported] = useState(false)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
+  // Check if media devices are supported in the browser
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+      setMediaSupported(true)
+    } else {
+      console.warn("getUserMedia is not supported in this environment.")
+      setMediaSupported(false)
+    }
+  }, [])
+
   const startRecording = async () => {
+    // Check if we're in a browser environment and media is supported
+    if (typeof window === "undefined") {
+      console.error("Cannot access media devices on server side")
+      alert("Audio recording is not available in this environment.")
+      return
+    }
+
+    if (!mediaSupported) {
+      alert("Audio recording is not supported in this browser. Please use a modern browser with microphone support.")
+      return
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert("Microphone access is not available. Please check your browser permissions.")
+      return
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
@@ -60,7 +88,17 @@ export default function AudioRecorder({ onAudioReady, isLoading = false }: Audio
       setIsRecording(true)
     } catch (error) {
       console.error('Error starting recording:', error)
-      alert('Error accessing microphone. Please allow microphone access.')
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          alert('Microphone access denied. Please allow microphone access in your browser settings.')
+        } else if (error.name === 'NotFoundError') {
+          alert('No microphone found. Please connect a microphone and try again.')
+        } else {
+          alert(`Error accessing microphone: ${error.message}`)
+        }
+      } else {
+        alert('Error accessing microphone. Please check your browser permissions.')
+      }
     }
   }
 
@@ -106,12 +144,21 @@ export default function AudioRecorder({ onAudioReady, isLoading = false }: Audio
     <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg border">
       <h2 className="text-xl font-bold text-center mb-6 text-gray-800">Voice Input</h2>
       
+      {/* Media Support Warning */}
+      {!mediaSupported && (
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
+          <p className="text-yellow-800 text-sm">
+            ⚠️ Audio recording may not be supported in this browser. You can still upload audio files.
+          </p>
+        </div>
+      )}
+      
       {/* Recording Controls */}
       <div className="flex justify-center space-x-4 mb-6">
         {!isRecording ? (
           <button
             onClick={startRecording}
-            disabled={isLoading}
+            disabled={isLoading || !mediaSupported}
             className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Mic className="w-5 h-5" />
