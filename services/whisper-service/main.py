@@ -103,17 +103,12 @@ async def transcribe_audio(file: UploadFile = File(...)):
 async def list_models():
     """List available Whisper models"""
     return {
-        "models": [
-            "tiny",
-            "base", 
-            "small",
-            "medium",
-            "large"
-        ],
-        "current_model": "tiny"
+        "available_models": ["tiny", "base", "small", "medium", "large"],
+        "current_model": "tiny",
+        "description": "Use /transcribe endpoint to transcribe audio files"
     }
 
-# Only for standalone run
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5001)
+    logger.info("Starting Whisper STT Service...")
+    uvicorn.run(app, host="0.0.0.0", port=5001) 

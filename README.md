@@ -120,7 +120,7 @@ cd services/whisper-service
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python main.pyc
+python main.py
 
 # LLM Service  
 cd services/llm-service
