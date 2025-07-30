@@ -13,6 +13,11 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$pr
 
 Start-Sleep -Seconds 2
 
+Write-Host "Starting LLM Service (Port 5002)..." -ForegroundColor Green
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$projectRoot\services\llm-service'; npm start" -WindowStyle Normal
+
+Start-Sleep -Seconds 2
+
 Write-Host "Starting Backend API Gateway (Port 3001)..." -ForegroundColor Green
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$projectRoot\backend'; npm start" -WindowStyle Normal
 
@@ -30,6 +35,7 @@ Write-Host "Services will be available at:" -ForegroundColor White
 Write-Host "- Frontend: http://localhost:3000" -ForegroundColor Green
 Write-Host "- Backend API: http://localhost:3001" -ForegroundColor Green
 Write-Host "- Whisper STT: http://localhost:5001" -ForegroundColor Green
+Write-Host "- LLM Service: http://localhost:5002" -ForegroundColor Green
 Write-Host ""
 Write-Host "Please wait a few moments for all services to start up." -ForegroundColor Yellow
 Write-Host "You can check service status at: http://localhost:3001/api/services/status" -ForegroundColor Yellow

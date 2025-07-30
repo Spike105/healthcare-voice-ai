@@ -88,7 +88,7 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
         headers: {
           ...formData.getHeaders(),
         },
-        timeout: 30000, // 30 second timeout
+        timeout: 120000, // 2 minute timeout for large model
       }
     );
 

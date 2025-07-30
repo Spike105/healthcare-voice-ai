@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", message="FP16 is not supported on CPU; using FP32 instead")
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import whisper
@@ -28,7 +31,7 @@ def load_model():
     global model
     if model is None:
         logger.info("Loading Whisper model...")
-        model = whisper.load_model("tiny")  # Options: tiny, base, small, medium, large
+        model = whisper.load_model("small")  # Options: tiny, base, small, medium, large
         logger.info("Whisper model loaded successfully")
     return model
 
@@ -98,22 +101,15 @@ async def transcribe_audio(file: UploadFile = File(...)):
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
-
 @app.get("/models")
 async def list_models():
     """List available Whisper models"""
     return {
-        "models": [
-            "tiny",
-            "base", 
-            "small",
-            "medium",
-            "large"
-        ],
-        "current_model": "tiny"
+        "available_models": ["tiny", "base", "small", "medium", "large"],
+        "current_model": "tiny",
+        "description": "Use /transcribe endpoint to transcribe audio files"
     }
-
-# Only for standalone run
 if __name__ == "__main__":
     import uvicorn
+    logger.info("Starting Whisper STT Service...")
     uvicorn.run(app, host="0.0.0.0", port=5001)
