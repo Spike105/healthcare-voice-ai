@@ -20,7 +20,12 @@ export default function AudioRecorder({ onAudioReady, isLoading = false }: Audio
 
   // Check if media devices are supported in the browser
   useEffect(() => {
-    if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+    if (
+      typeof window !== "undefined" &&
+      typeof navigator !== "undefined" &&
+      typeof navigator.mediaDevices !== "undefined" &&
+      typeof navigator.mediaDevices.getUserMedia === "function"
+    ) {
       setMediaSupported(true)
     } else {
       console.warn("getUserMedia is not supported in this environment.")
