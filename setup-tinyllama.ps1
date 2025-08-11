@@ -1,5 +1,5 @@
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Gemma 3 1B Setup for Healthcare Voice AI" -ForegroundColor Cyan
+Write-Host "TinyLlama Setup for Healthcare Voice AI" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -37,45 +37,45 @@ try {
     }
 }
 
-# Check if Gemma 3 1B is installed
+# Check if TinyLlama is installed
 Write-Host ""
-Write-Host "Checking Gemma 3 1B model..." -ForegroundColor Yellow
+Write-Host "Checking TinyLlama model..." -ForegroundColor Yellow
 try {
     $models = Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -TimeoutSec 5 | ConvertFrom-Json
-    $gemmaInstalled = $models.models | Where-Object { $_.name -like "*gemma*" }
+    $tinyllamaInstalled = $models.models | Where-Object { $_.name -like "*tinyllama*" }
     
-    if ($gemmaInstalled) {
-        Write-Host "✅ Gemma model is installed: $($gemmaInstalled.name)" -ForegroundColor Green
+    if ($tinyllamaInstalled) {
+        Write-Host "✅ TinyLlama model is installed: $($tinyllamaInstalled.name)" -ForegroundColor Green
     } else {
-        Write-Host "❌ Gemma 3 1B model is not installed" -ForegroundColor Red
-        Write-Host "Downloading Gemma 3 1B model (this may take several minutes)..." -ForegroundColor Yellow
-        Write-Host "Model size: ~815MB" -ForegroundColor Cyan
+        Write-Host "❌ TinyLlama model is not installed" -ForegroundColor Red
+        Write-Host "Downloading TinyLlama model (this may take several minutes)..." -ForegroundColor Yellow
+        Write-Host "Model size: ~1.1GB" -ForegroundColor Cyan
         
-        $response = Read-Host "Do you want to download Gemma 3 1B now? (y/n)"
+        $response = Read-Host "Do you want to download TinyLlama now? (y/n)"
         if ($response -eq 'y' -or $response -eq 'Y') {
-            Write-Host "Downloading Gemma 3 1B..." -ForegroundColor Yellow
-            ollama pull gemma3:1b
-            Write-Host "✅ Gemma 3 1B downloaded successfully" -ForegroundColor Green
+            Write-Host "Downloading TinyLlama..." -ForegroundColor Yellow
+            ollama pull tinyllama:latest
+            Write-Host "✅ TinyLlama downloaded successfully" -ForegroundColor Green
         } else {
-            Write-Host "Please run 'ollama pull gemma3:1b' manually" -ForegroundColor Yellow
+            Write-Host "Please run 'ollama pull tinyllama:latest' manually" -ForegroundColor Yellow
         }
     }
 } catch {
     Write-Host "❌ Error checking models: $_" -ForegroundColor Red
 }
 
-# Test Gemma 3 1B
+# Test TinyLlama
 Write-Host ""
-Write-Host "Testing Gemma 3 1B with a healthcare question..." -ForegroundColor Yellow
+Write-Host "Testing TinyLlama with a healthcare question..." -ForegroundColor Yellow
 try {
     $testPrompt = "What are the common symptoms of a headache?"
     Write-Host "Test prompt: $testPrompt" -ForegroundColor Cyan
     
-    $testResponse = ollama run gemma3:1b $testPrompt
-    Write-Host "✅ Gemma 3 1B is working correctly" -ForegroundColor Green
+    $testResponse = ollama run tinyllama:latest $testPrompt
+    Write-Host "✅ TinyLlama is working correctly" -ForegroundColor Green
     Write-Host "Sample response: $($testResponse.Substring(0, [Math]::Min(100, $testResponse.Length)))..." -ForegroundColor Gray
 } catch {
-    Write-Host "❌ Error testing Gemma 3 1B: $_" -ForegroundColor Red
+    Write-Host "❌ Error testing TinyLlama: $_" -ForegroundColor Red
 }
 
 # Test LLM service integration

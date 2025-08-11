@@ -47,16 +47,16 @@ cd ../tts-service
 pip install -r requirements.txt
 ```
 
-### 2. Setup Ollama and Gemma 3 1B
+### 2. Setup Ollama and TinyLlama
 
 ```bash
 # Install Ollama from https://ollama.ai/download
 
 # Run the automated setup script
-./setup-gemma.ps1
+./setup-tinyllama.ps1
 
-# Or manually download Gemma 3 1B
-ollama pull gemma3:1b
+# Or manually download TinyLlama
+ollama pull tinyllama:latest
 ```
 
 ### 3. Start All Services
@@ -111,13 +111,13 @@ healthcare-voice-ai/
 │   └── package.json         # Backend dependencies
 ├── services/
 │   ├── whisper-service/     # STT service (Python/FastAPI + Tiny Whisper model)
-│   ├── llm-service/         # LLM service (Node.js + Gemma 3 1B via Ollama)
+│   ├── llm-service/         # LLM service (Node.js + TinyLlama via Ollama)
 │   └── tts-service/         # TTS service (Python/FastAPI)
 ├── testing/                 # Test files and audio samples
 │   ├── harvard.wav          # Sample audio file for testing
 │   └── test-*.ps1           # Test scripts
 ├── scripts/                 # Automation scripts
-│   ├── setup-gemma.ps1      # Gemma 3 1B setup script
+│   ├── setup-tinyllama.ps1      # TinyLlama setup script
 │   ├── quick-test-whisper.ps1 # Whisper service testing
 │   ├── start-all-services.ps1 # Service startup automation
 │   └── check-services.ps1   # Service health checks
@@ -147,7 +147,7 @@ TTS_SERVICE_URL=http://localhost:5003
 
 # Ollama Configuration
 OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=gemma3:1b
+OLLAMA_MODEL=tinyllama:latest
 
 # Database (future feature)
 DATABASE_URL=postgresql://user:password@localhost:5432/healthcare_ai
@@ -166,7 +166,7 @@ NEXTAUTH_URL=http://localhost:3000
 
 # Test individual services
 curl -X GET http://localhost:5001/health  # Whisper (Tiny model)
-curl -X GET http://localhost:5002/health  # LLM (Llama 3 8B)
+curl -X GET http://localhost:5002/health  # LLM (TinyLlama)
 curl -X GET http://localhost:5003/health  # TTS
 ```
 
@@ -185,7 +185,7 @@ curl -X POST http://localhost:5001/transcribe -F "file=@testing/harvard.wav"
 curl -X POST http://localhost:5002/chat -H "Content-Type: application/json" -d '{"message": "What are the symptoms of a headache?"}'
 
 # Test Ollama directly
-curl -X POST http://localhost:11434/api/generate -H "Content-Type: application/json" -d '{"model": "gemma3:1b", "prompt": "Hello"}'
+curl -X POST http://localhost:11434/api/generate -H "Content-Type: application/json" -d '{"model": "tinyllama:latest", "prompt": "Hello"}'
 ```
 
 ## 🎮 Usage Instructions

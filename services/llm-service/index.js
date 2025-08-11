@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5002;
 
 // Ollama configuration
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma3:1b';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'tinyllama:latest';
 
 // Middleware
 app.use(cors());
@@ -43,25 +43,32 @@ Be helpful, informative, and always prioritize user safety.`;
 // Function to call Ollama API
 async function callOllama(prompt, context = '') {
   try {
-    const fullPrompt = context ? `${context}\n\nUser: ${prompt}` : prompt;
+    // Create a simpler prompt format
+    const systemPrompt = "You are a helpful healthcare AI assistant. Provide helpful health information but always recommend consulting healthcare professionals for medical advice.";
+    const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}\n\nAssistant:`;
+    
+    console.log('Calling Ollama with prompt:', fullPrompt.substring(0, 200) + '...');
     
     const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
       model: OLLAMA_MODEL,
       prompt: fullPrompt,
-      system: HEALTHCARE_SYSTEM_PROMPT,
       stream: false,
       options: {
         temperature: 0.7,
         top_p: 0.9,
-        max_tokens: 1000
+        num_predict: 500
       }
     }, {
       timeout: 30000 // 30 second timeout
     });
 
+    console.log('Ollama response received:', response.data.response.substring(0, 100) + '...');
     return response.data.response;
   } catch (error) {
     console.error('Error calling Ollama:', error.message);
+    if (error.response) {
+      console.error('Ollama error response:', error.response.data);
+    }
     throw new Error(`Ollama API error: ${error.message}`);
   }
 }
@@ -167,7 +174,7 @@ app.post('/chat', async (req, res) => {
 // Get available models/info
 app.get('/models', (req, res) => {
   res.json({
-    available_models: ['gemma3:1b'],
+    available_models: ['tinyllama:latest'],
     current_model: OLLAMA_MODEL,
     ollama_url: OLLAMA_URL,
     capabilities: [
