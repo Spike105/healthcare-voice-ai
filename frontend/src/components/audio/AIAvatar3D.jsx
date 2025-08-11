@@ -164,3 +164,4 @@ export default function AIAvatar3D({ audioElement = null, modelPath = "/avatar.g
 function AIAvatarWrapper({ modelPath, audioAnalyser }) {
   return <AvatarMesh modelPath={modelPath} audioAnalyser={audioAnalyser} />;
 }
+
