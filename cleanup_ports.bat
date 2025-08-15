@@ -1,0 +1,13 @@
+@echo off
+echo Cleaning up ports...
+
+echo Killing Python processes...
+taskkill /IM python.exe /F >nul 2>&1
+
+echo Killing Node processes...
+taskkill /IM node.exe /F >nul 2>&1
+
+echo Waiting for ports to be freed...
+timeout /t 3 /nobreak >nul
+
+echo Cleanup complete!

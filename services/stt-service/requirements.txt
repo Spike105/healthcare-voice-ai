@@ -1,7 +1,8 @@
 fastapi==0.104.1
 uvicorn==0.24.0
-python-multipart==0.0.6
 google-cloud-speech==2.21.0
 google-auth==2.23.4
-google-auth-oauthlib==1.1.0
-google-auth-httplib2==0.1.1
+python-multipart==0.0.6
+websockets==12.0
+python-dotenv==1.0.0
+requests==2.31.0

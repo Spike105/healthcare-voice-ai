@@ -1,23 +1,39 @@
-
 {
-  "name": "llm-service",
+  "name": "healthcare-llm-service",
   "version": "1.0.0",
-  "description": "LLM Service for Healthcare Voice AI",
-  "main": "index.js",
+  "description": "Healthcare LLM service using Ollama",
+  "main": "app.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest"
   },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "axios": "^1.5.0",
-    "dotenv": "^16.3.1"
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "compression": "^1.7.4"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "eslint": "^8.54.0"
   },
-  "keywords": ["llm", "healthcare", "ai"],
-  "author": "Healthcare AI Team",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "healthcare",
+    "llm",
+    "ollama",
+    "ai",
+    "medical"
+  ],
+  "author": "Your Name",
   "license": "MIT"
-} 
+}
