@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import AudioRecorder from '../components/AudioRecorder';
+import React from 'react';
+import ChatBot from '../components/ChatBot';
 
 export default function Home() {
   const handleTranscription = (text: string) => {
@@ -11,23 +11,29 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-          Healthcare Voice AI Assistant
-        </h1>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            Healthcare AI Assistant
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Your intelligent healthcare companion - speak, type, or upload audio
+          </p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-2xl mx-auto">
+            <p className="text-sm font-semibold text-yellow-800">
+              ⚠️ This AI assistant is for informational purposes only and is not a substitute for professional medical advice.
+            </p>
+          </div>
+        </div>
         
-        <AudioRecorder 
+        <ChatBot 
           onTranscription={handleTranscription}
           onLLMResponse={handleLLMResponse}
         />
         
-        <div className="mt-8 text-center text-gray-600">
-          <p>Speak naturally about your health concerns.</p>
-          <p>The AI will provide helpful information and guidance.</p>
-          <p className="mt-4 text-sm font-semibold text-red-600">
-            This AI assistant is not a substitute for professional medical advice.
-          </p>
+        <div className="mt-6 text-center text-gray-500 text-sm">
+          <p>💡 Tips: Use voice for natural conversation, type for quick questions, or upload audio files for analysis</p>
         </div>
       </div>
     </div>

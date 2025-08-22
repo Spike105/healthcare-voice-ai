@@ -1,0 +1,14 @@
+# MedGemma LLM Service Python Dependencies
+torch>=2.0.0
+transformers>=4.35.0
+python-dotenv>=1.0.0
+accelerate>=0.24.0
+scikit-learn>=1.3.0
+numpy>=1.24.0
+scipy>=1.11.0
+# Optional: for better performance
+bitsandbytes>=0.41.0
+# For tokenization
+tokenizers>=0.14.0
+# For model optimization
+optimum>=1.14.0

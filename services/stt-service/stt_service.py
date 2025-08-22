@@ -1,7 +1,9 @@
 import os
 import logging
 import tempfile
-from fastapi import FastAPI, File, UploadFile, HTTPException
+import httpx
+import asyncio
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import speech
 from google.oauth2 import service_account
@@ -13,6 +15,10 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# LLM Service Configuration
+LLM_SERVICE_URL = os.getenv('LLM_SERVICE_URL', 'http://localhost:5002')
+LLM_CHAT_ENDPOINT = f"{LLM_SERVICE_URL}/chat"
 
 app = FastAPI(title="STT Service", version="1.0.0")
 
@@ -56,6 +62,49 @@ def get_speech_client():
         logger.error(f"Failed to initialize Google Speech client: {e}")
         return None
 
+async def send_to_llm(transcript: str) -> dict:
+    """Send transcription to LLM service for processing"""
+    try:
+        async with httpx.AsyncClient(timeout=130.0) as client:
+            response = await client.post(
+                LLM_CHAT_ENDPOINT,
+                json={
+                    "message": transcript,
+                    "context": "medical_transcription"
+                }
+            )
+            
+            if response.status_code == 200:
+                llm_data = response.json()
+                logger.info(f"LLM response received: {llm_data.get('response', '')[:100]}...")
+                return {
+                    "success": True,
+                    "response": llm_data.get('response', ''),
+                    "status": "processed"
+                }
+            else:
+                logger.error(f"LLM service error: {response.status_code} - {response.text}")
+                return {
+                    "success": False,
+                    "error": f"LLM service returned {response.status_code}",
+                    "status": "error"
+                }
+                
+    except httpx.TimeoutException:
+        logger.error("LLM service timeout")
+        return {
+            "success": False,
+            "error": "LLM service timeout",
+            "status": "timeout"
+        }
+    except Exception as e:
+        logger.error(f"Error communicating with LLM service: {str(e)}")
+        return {
+            "success": False,
+            "error": f"LLM communication error: {str(e)}",
+            "status": "error"
+        }
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "stt-service"}
@@ -67,10 +116,27 @@ from fastapi import File, UploadFile
 
 # Replace the mock websocket endpoint with a proper HTTP POST endpoint
 @app.post("/transcribe")
-async def transcribe_audio(audio: UploadFile = File(...)):
-    # Real Google Speech-to-Text implementation here
-    # (Use the full code I provided earlier)
+async def transcribe_audio(audio: UploadFile = File(None), text: str = Form(None)):
     try:
+        # Handle text input directly
+        if text and not audio:
+            logger.info(f"Received text input: {text[:50]}...")
+            
+            # Send text directly to LLM service for processing
+            llm_response = await send_to_llm(text)
+            
+            return {
+                "text": text,
+                "confidence": 1.0,
+                "status": "success",
+                "config_used": "text_input",
+                "llm_response": llm_response
+            }
+        
+        # Handle audio input
+        if not audio:
+            raise HTTPException(status_code=400, detail="Either audio file or text must be provided")
+            
         logger.info(f"Received audio file: {audio.filename}, size: {audio.size}")
         
         # Read audio content
@@ -90,48 +156,92 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         # Configure recognition
         audio_data = speech.RecognitionAudio(content=audio_content)
         
-        # Detect audio format and configure accordingly
-        config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.WEBM_OPUS,  # For browser recordings
-            sample_rate_hertz=48000,  # Common browser sample rate
+        # Try different configurations based on common formats
+        configs_to_try = []
+        
+        # Configuration 1: WEBM OPUS (common for browser recordings)
+        configs_to_try.append(speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.WEBM_OPUS,
+            sample_rate_hertz=48000,
             language_code="en-US",
             enable_automatic_punctuation=True,
-            model="medical_conversation",  # Use medical model for healthcare
-        )
+            model="medical_conversation",
+        ))
         
-        # Alternative config for different audio formats
-        if audio.content_type and "wav" in audio.content_type:
-            config.encoding = speech.RecognitionConfig.AudioEncoding.LINEAR16
-            config.sample_rate_hertz = 16000
-        elif audio.content_type and "mp3" in audio.content_type:
-            config.encoding = speech.RecognitionConfig.AudioEncoding.MP3
+        # Configuration 2: WAV LINEAR16 with 48kHz (high quality)
+        configs_to_try.append(speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=48000,
+            language_code="en-US",
+            enable_automatic_punctuation=True,
+            model="medical_conversation",
+        ))
         
-        logger.info(f"Using audio config: encoding={config.encoding}, sample_rate={config.sample_rate_hertz}")
+        # Configuration 3: WAV LINEAR16 with 16kHz (standard)
+        configs_to_try.append(speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            language_code="en-US",
+            enable_automatic_punctuation=True,
+            model="medical_conversation",
+        ))
         
-        # Perform transcription
-        response = client.recognize(config=config, audio=audio_data)
+        # Configuration 4: Auto-detect encoding and sample rate
+        configs_to_try.append(speech.RecognitionConfig(
+            language_code="en-US",
+            enable_automatic_punctuation=True,
+            model="medical_conversation",
+        ))
         
-        if response.results:
-            # Get the best transcription result
-            result = response.results[0]
-            transcript = result.alternatives[0].transcript
-            confidence = result.alternatives[0].confidence
-            
-            logger.info(f"Transcription successful: '{transcript}' (confidence: {confidence})")
-            
-            return {
-                "text": transcript,
-                "confidence": confidence,
-                "status": "success"
-            }
-        else:
-            logger.warning("No speech detected in audio")
-            return {
-                "text": "",
-                "confidence": 0.0,
-                "error": "No speech detected",
-                "status": "no_speech"
-            }
+        # Try each configuration until one works
+        last_error = None
+        for i, config in enumerate(configs_to_try):
+            try:
+                logger.info(f"Trying config {i+1}: encoding={getattr(config, 'encoding', 'AUTO')}, sample_rate={getattr(config, 'sample_rate_hertz', 'AUTO')}")
+                
+                # Perform transcription
+                response = client.recognize(config=config, audio=audio_data)
+                
+                if response.results:
+                    # Get the best transcription result
+                    result = response.results[0]
+                    transcript = result.alternatives[0].transcript
+                    confidence = result.alternatives[0].confidence
+                    
+                    logger.info(f"Transcription successful with config {i+1}: '{transcript}' (confidence: {confidence})")
+                    
+                    # Send transcription to LLM service for processing
+                    llm_response = await send_to_llm(transcript)
+                    
+                    return {
+                        "text": transcript,
+                        "confidence": confidence,
+                        "status": "success",
+                        "config_used": i+1,
+                        "llm_response": llm_response
+                    }
+                else:
+                    logger.info(f"Config {i+1} worked but no speech detected")
+                    return {
+                        "text": "",
+                        "confidence": 0.0,
+                        "error": "No speech detected",
+                        "status": "no_speech"
+                    }
+                    
+            except Exception as config_error:
+                logger.warning(f"Config {i+1} failed: {str(config_error)}")
+                last_error = config_error
+                continue
+        
+        # If all configurations failed
+        logger.error(f"All configurations failed. Last error: {str(last_error)}")
+        return {
+            "text": "",
+            "confidence": 0.0,
+            "error": f"All audio configurations failed. Last error: {str(last_error)}",
+            "status": "error"
+        }
             
     except Exception as e:
         logger.error(f"Transcription error: {str(e)}")
